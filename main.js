@@ -355,13 +355,14 @@ function renderProducts(list) {
 
     list.forEach(p => {
         productsGrid.innerHTML += `
-          <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+          <div class="bg-gradient-to-br from-green-100 via-blue-100 to-cyan-100 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
             <div class="relative overflow-hidden h-60">
               <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
               <span class="absolute top-2 right-2 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">${p.category}</span>
             </div>
             <div class="p-4">
               <h3 class="font-semibold text-lg mb-1 truncate">${p.title}</h3>
+               <p class="max-h-24 text-xs overflow-auto">${p.description}</p>
               <div class="flex items-center mb-2">
                 <div class="text-yellow-400">
                   ${"★".repeat(p.rating).padEnd(5, "☆")}
@@ -370,7 +371,7 @@ function renderProducts(list) {
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-green-600 font-bold text-lg">${p.price}$</span>
-                <button class="text-sm bg-blue-500 hover:bg-blue-200 text-white px-3 py-1 rounded-full transition">
+                <button class="text-sm bg-gradient-to-br from-gray-700 via-blue-900 hover:bg-blue-200 text-white px-3 py-1 rounded-full transition">
                   <i class="fas fa-shopping-cart mr-1"></i></button>
               </div>
             </div>
