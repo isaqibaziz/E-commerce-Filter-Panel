@@ -75,7 +75,7 @@ const products = [
     id: 9,
     image: "./images/t-shirt 3.avif",
     title: "Black & Gray Tracksuit",
-    description: "Summer Collection Adventure ",
+    description: "Summer Collection Adventure",
     price: 200,
     category: "T-shirt",
     rating: 2,
@@ -117,16 +117,26 @@ const ratingFilter = document.getElementById("ratingFilter");
 const priceRange = document.getElementById("priceRange");
 const maxPrice = document.getElementById("maxPrice");
 const clearBtn = document.getElementById("clearFilters");
-const productsGrid = document.querySelector("#productsGrid > div");
+const productsContainer = document.getElementById("productsContainer");
 const filterChips = document.getElementById("filterChips");
 const clearAllChips = document.getElementById("clearAllChips");
 const sortDropdownBtn = document.getElementById("sortDropdownBtn");
 const sortDropdown = document.getElementById("sortDropdown");
+const searchInput = document.getElementById('searchInput');
+const searchButton = document.getElementById('searchButton');
+const pagination = document.getElementById('pagination');
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const pageNumbers = document.getElementById('pageNumbers');
 
 let selectedCategories = new Set();
 let selectedRating = null;
 let selectedPrice = 1000;
 let currentSort = null;
+let currentPage = 1;
+const productsPerPage = 6;
+let searchQuery = '';
+let filteredProducts = [];
 
 // Initialize filters
 function initFilters() {
@@ -158,6 +168,7 @@ function initFilters() {
     document.querySelectorAll(".category-checkbox").forEach(cb => {
         cb.addEventListener("change", () => {
             cb.checked ? selectedCategories.add(cb.value) : selectedCategories.delete(cb.value);
+            currentPage = 1;
             updateFilterChips();
             applyFilters();
         });
@@ -166,6 +177,7 @@ function initFilters() {
     document.querySelectorAll(".rating-radio").forEach(rb => {
         rb.addEventListener("change", () => {
             selectedRating = parseInt(rb.value);
+            currentPage = 1;
             updateFilterChips();
             applyFilters();
         });
@@ -174,6 +186,7 @@ function initFilters() {
     priceRange.addEventListener("input", () => {
         selectedPrice = parseInt(priceRange.value);
         maxPrice.textContent = `${selectedPrice}`;
+        currentPage = 1;
         updateFilterChips();
         applyFilters();
     });
@@ -183,6 +196,9 @@ function initFilters() {
         selectedCategories.clear();
         selectedRating = null;
         selectedPrice = 1000;
+        currentPage = 1;
+        searchQuery = '';
+        searchInput.value = '';
 
         priceRange.value = 1000;
         maxPrice.textContent = "1000";
@@ -200,6 +216,9 @@ function initFilters() {
         selectedCategories.clear();
         selectedRating = null;
         selectedPrice = 1000;
+        currentPage = 1;
+        searchQuery = '';
+        searchInput.value = '';
         currentSort = null;
 
         priceRange.value = 1000;
@@ -222,6 +241,7 @@ function initFilters() {
         option.addEventListener("click", (e) => {
             e.preventDefault();
             currentSort = e.target.dataset.sort;
+            currentPage = 1;
             updateFilterChips();
             applyFilters();
             sortDropdown.classList.add("hidden");
@@ -230,6 +250,35 @@ function initFilters() {
 
     document.addEventListener("click", () => {
         sortDropdown.classList.add("hidden");
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        currentPage = 1;
+        applyFilters();
+    });
+    
+    searchButton.addEventListener('click', () => {
+        searchQuery = searchInput.value.toLowerCase();
+        currentPage = 1;
+        applyFilters();
+    });
+
+    // Pagination controls
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderProducts(filteredProducts);
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderProducts(filteredProducts);
+        }
     });
 }
 
@@ -240,10 +289,10 @@ function updateFilterChips() {
     // Category chips
     selectedCategories.forEach(cat => {
         const chip = document.createElement("div");
-        chip.className = "flex items-center text-sm px-3 py-1 rounded-full";
+        chip.className = "flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full";
         chip.innerHTML = `
           ${cat}
-          <button class="ml-2" data-type="category" data-value="${cat}">
+          <button class="ml-2 text-blue-600 hover:text-blue-900" data-type="category" data-value="${cat}">
             <i class="fas fa-times"></i>
           </button>
         `;
@@ -253,10 +302,10 @@ function updateFilterChips() {
     // Rating chip
     if (selectedRating) {
         const chip = document.createElement("div");
-        chip.className = "flex items-center text-sm px-3 py-1 rounded-full";
+        chip.className = "flex items-center bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full";
         chip.innerHTML = `
           ${"★".repeat(selectedRating).padEnd(5, "☆")} & up
-          <button class="ml-2" data-type="rating">
+          <button class="ml-2 text-yellow-600 hover:text-yellow-900" data-type="rating">
             <i class="fas fa-times"></i>
           </button>
         `;
@@ -266,10 +315,23 @@ function updateFilterChips() {
     // Price chip
     if (selectedPrice < 1000) {
         const chip = document.createElement("div");
-        chip.className = "flex items-center text-sm px-3 py-1 rounded-full";
+        chip.className = "flex items-center bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full";
         chip.innerHTML = `
           Under ${selectedPrice}
-          <button class="ml-2 " data-type="price">
+          <button class="ml-2 text-green-600 hover:text-green-900" data-type="price">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        filterChips.appendChild(chip);
+    }
+
+    // Search chip
+    if (searchQuery) {
+        const chip = document.createElement("div");
+        chip.className = "flex items-center bg-gray-100 text-gray-800 text-sm px-3 py-1 rounded-full";
+        chip.innerHTML = `
+          Search: "${searchQuery}"
+          <button class="ml-2 text-gray-600 hover:text-gray-900" data-type="search">
             <i class="fas fa-times"></i>
           </button>
         `;
@@ -298,7 +360,7 @@ function updateFilterChips() {
 
     // Show/hide clear all button
     clearAllChips.classList.toggle("hidden",
-        selectedCategories.size === 0 && !selectedRating && selectedPrice === 1000 && !currentSort);
+        selectedCategories.size === 0 && !selectedRating && selectedPrice === 1000 && !currentSort && !searchQuery);
 
     document.querySelectorAll("#filterChips button").forEach(btn => {
         btn.addEventListener("click", (e) => {
@@ -316,10 +378,14 @@ function updateFilterChips() {
                 selectedPrice = 1000;
                 priceRange.value = 1000;
                 maxPrice.textContent = "1000";
+            } else if (type === "search") {
+                searchQuery = '';
+                searchInput.value = '';
             } else if (type === "sort") {
                 currentSort = null;
             }
 
+            currentPage = 1;
             updateFilterChips();
             applyFilters();
         });
@@ -327,17 +393,21 @@ function updateFilterChips() {
 }
 
 function applyFilters() {
-    let filtered = products.filter(p => {
+    filteredProducts = products.filter(p => {
         const categoryMatch = selectedCategories.size === 0 || selectedCategories.has(p.category);
         const ratingMatch = !selectedRating || p.rating >= selectedRating;
         const priceMatch = p.price <= selectedPrice;
-        return categoryMatch && ratingMatch && priceMatch;
+        const searchMatch = !searchQuery || 
+                           p.title.toLowerCase().includes(searchQuery) || 
+                           p.description.toLowerCase().includes(searchQuery);
+        
+        return categoryMatch && ratingMatch && priceMatch && searchMatch;
     });
 
     // Apply sorting
     if (currentSort) {
         const [field, direction] = currentSort.split("-");
-        filtered.sort((a, b) => {
+        filteredProducts.sort((a, b) => {
             if (direction === "desc") {
                 return b[field] - a[field];
             } else {
@@ -346,38 +416,130 @@ function applyFilters() {
         });
     }
 
-    renderProducts(filtered);
+    renderProducts(filteredProducts);
 }
 
-// Render products
+// Render products with pagination
 function renderProducts(list) {
-    productsGrid.innerHTML = "";
-
-    list.forEach(p => {
-        productsGrid.innerHTML += `
-          <div class="bg-gradient-to-br from-green-100 via-blue-100 to-cyan-100 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-            <div class="relative overflow-hidden h-60">
-              <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-              <span class="absolute top-2 right-2 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">${p.category}</span>
+    filteredProducts = list;
+    const totalProducts = list.length;
+    const totalPages = Math.ceil(totalProducts / productsPerPage);
+    
+    // Calculate products for current page
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const endIndex = Math.min(startIndex + productsPerPage, totalProducts);
+    const productsToShow = list.slice(startIndex, endIndex);
+    
+    // Clear and render products
+    productsContainer.innerHTML = '';
+    
+    if (productsToShow.length === 0) {
+        productsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-xl font-semibold">No products found</h3>
+                <p class="text-gray-600">Try adjusting your search or filters</p>
             </div>
-            <div class="p-4">
-              <h3 class="font-semibold text-lg mb-1 truncate">${p.title}</h3>
-               <p class="max-h-24 text-xs overflow-auto">${p.description}</p>
-              <div class="flex items-center mb-2">
-                <div class="text-yellow-400">
-                  ${"★".repeat(p.rating).padEnd(5, "☆")}
-                </div>
-                <span class="text-xs text-gray-500 ml-1">(${p.rating})</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-green-600 font-bold text-lg">${p.price}$</span>
-                <button class="text-sm bg-gradient-to-br from-gray-700 via-blue-900 hover:bg-blue-200 text-white px-3 py-1 rounded-full transition">
-                  <i class="fas fa-shopping-cart mr-1"></i></button>
-              </div>
-            </div>
-          </div>
         `;
-    });
+    } else {
+        productsToShow.forEach(p => {
+            productsContainer.innerHTML += `
+                <div class="bg-gradient-to-br from-green-100 via-blue-100 to-cyan-100 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <div class="relative overflow-hidden h-60">
+                        <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        <span class="absolute top-2 right-2 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">${p.category}</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg mb-1 truncate">${p.title}</h3>
+                        <p class="max-h-24 text-xs overflow-auto">${p.description}</p>
+                        <div class="flex items-center mb-2">
+                            <div class="text-yellow-400">
+                                ${"★".repeat(p.rating).padEnd(5, "☆")}
+                            </div>
+                            <span class="text-xs text-gray-500 ml-1">(${p.rating})</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-green-600 font-bold text-lg">${p.price}$</span>
+                            <button class="text-sm bg-gradient-to-br from-gray-700 via-blue-900 hover:bg-blue-200 text-white px-3 py-1 rounded-full transition">
+                                <i class="fas fa-shopping-cart mr-1"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    // Update pagination controls
+    updatePagination(totalPages);
+}
+
+function updatePagination(totalPages) {
+    // Clear existing page numbers
+    pageNumbers.innerHTML = '';
+    
+    // Disable/enable previous/next buttons
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    
+    // Show page numbers (limited to 5 for better UX)
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust if we're at the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Always show first page button if not visible
+    if (startPage > 1) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `px-4 py-2 mx-1 ${1 === currentPage ? 'bg-blue-500 text-white' : 'bg-white'} rounded-md`;
+        pageBtn.textContent = '1';
+        pageBtn.addEventListener('click', () => {
+            currentPage = 1;
+            renderProducts(filteredProducts);
+        });
+        pageNumbers.appendChild(pageBtn);
+        
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'px-2';
+            ellipsis.textContent = '...';
+            pageNumbers.appendChild(ellipsis);
+        }
+    }
+    
+    // Show visible page buttons
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `px-4 py-2 mx-1 ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-white'} rounded-md`;
+        pageBtn.textContent = i;
+        pageBtn.addEventListener('click', () => {
+            currentPage = i;
+            renderProducts(filteredProducts);
+        });
+        pageNumbers.appendChild(pageBtn);
+    }
+    
+    // Always show last page button if not visible
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'px-2';
+            ellipsis.textContent = '...';
+            pageNumbers.appendChild(ellipsis);
+        }
+        
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `px-4 py-2 mx-1 ${totalPages === currentPage ? 'bg-blue-500 text-white' : 'bg-white'} rounded-md`;
+        pageBtn.textContent = totalPages;
+        pageBtn.addEventListener('click', () => {
+            currentPage = totalPages;
+            renderProducts(filteredProducts);
+        });
+        pageNumbers.appendChild(pageBtn);
+    }
 }
 
 // Initialize
